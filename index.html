@@ -6,6 +6,8 @@
     <title>Sport Info Hub</title>
     <!-- Tailwind CSS CDN for JIT mode -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JavaScript library -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         /* Custom styles if needed, or to override Tailwind */
         body {
@@ -36,6 +38,14 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 md:h-4 md:w-4"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                     <span>+381 63 366 007</span>
                 </a>
+                <button id="newsletter-btn" class="flex items-center gap-2 hover:underline text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 md:h-4 md:w-4"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    <span>Newsletter</span>
+                </button>
+                <button id="admin-btn" class="flex items-center gap-2 hover:underline text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 md:h-4 md:w-4"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m22 21-2-2"/><path d="m16 16 2 2"/></svg>
+                    <span>Admin</span>
+                </button>
             </div>
         </header>
 
@@ -120,9 +130,272 @@
         </footer>
     </div>
 
+    <!-- Newsletter Modal -->
+    <div id="newsletter-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white text-gray-900 rounded-lg shadow-xl max-w-md w-full p-6 relative">
+            <!-- Close button -->
+            <button id="close-modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            
+            <!-- Modal content -->
+            <div class="text-center">
+                <h3 class="text-xl font-bold mb-4">Prijavi se na Newsletter</h3>
+                <p class="text-gray-600 mb-6">Dobijaj najnovije vesti, savete i inspiraciju direktno u svoj inbox.</p>
+                
+                <form id="newsletter-form" class="space-y-4">
+                    <div>
+                        <input 
+                            type="email" 
+                            id="newsletter-email" 
+                            placeholder="Unesite svoju email adresu" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        >
+                    </div>
+                    <button 
+                        type="submit" 
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        Prijavi se
+                    </button>
+                </form>
+                
+                <p class="text-xs text-gray-500 mt-4">
+                    Možete se odjaviti u bilo kom trenutku. Poštujemo vašu privatnost.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="admin-login-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white text-gray-900 rounded-lg shadow-xl max-w-md w-full p-6 relative">
+            <!-- Close button -->
+            <button id="close-admin-modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            
+            <!-- Modal content -->
+            <div class="text-center">
+                <h3 class="text-xl font-bold mb-4">Admin Login</h3>
+                <p class="text-gray-600 mb-6">Unesite svoje admin podatke</p>
+                
+                <form id="admin-login-form" class="space-y-4">
+                    <div>
+                        <label for="admin-email" class="block text-sm font-medium text-gray-700 mb-2">
+                            Email
+                        </label>
+                        <input 
+                            type="email" 
+                            id="admin-email" 
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="admin@drmpaunovic.rs"
+                        >
+                    </div>
+                    <div>
+                        <label for="admin-password" class="block text-sm font-medium text-gray-700 mb-2">
+                            Lozinka
+                        </label>
+                        <input 
+                            type="password" 
+                            id="admin-password" 
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Unesite lozinku"
+                        >
+                    </div>
+                    <button 
+                        type="submit" 
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        Uloguj se
+                    </button>
+                </form>
+                
+                <p class="text-xs text-gray-500 mt-4">
+                    Samo autorizovani korisnici mogu pristupiti admin panelu.
+                </p>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Initialize Supabase client
+        const supabaseUrl = 'https://prousexeqfrpzejshxpq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByb3VzZXhlcWZycHplanNoeHBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3ODAzOTAsImV4cCI6MjA2OTM1NjM5MH0.7VYr3xdH3jQaWN2xpBuzqwp3hctHAyS1rIMDOBuTEz8';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
         // Dynamically set the current year in the footer
         document.getElementById('current-year').textContent = new Date().getFullYear();
+        
+        // Newsletter modal functionality
+        const modal = document.getElementById('newsletter-modal');
+        const openBtn = document.getElementById('newsletter-btn');
+        const closeBtn = document.getElementById('close-modal');
+        const form = document.getElementById('newsletter-form');
+        const emailInput = document.getElementById('newsletter-email');
+        
+        // Admin modal functionality
+        const adminModal = document.getElementById('admin-login-modal');
+        const adminBtn = document.getElementById('admin-btn');
+        const closeAdminBtn = document.getElementById('close-admin-modal');
+        const adminForm = document.getElementById('admin-login-form');
+        const adminEmailInput = document.getElementById('admin-email');
+        const adminPasswordInput = document.getElementById('admin-password');
+        
+        // Open newsletter modal
+        openBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        });
+        
+        // Close newsletter modal
+        closeBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        });
+        
+        // Open admin modal
+        adminBtn.addEventListener('click', () => {
+            adminModal.classList.remove('hidden');
+            adminModal.classList.add('flex');
+        });
+        
+        // Close admin modal
+        closeAdminBtn.addEventListener('click', () => {
+            adminModal.classList.add('hidden');
+            adminModal.classList.remove('flex');
+        });
+        
+        // Close modals when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        });
+        
+        adminModal.addEventListener('click', (e) => {
+            if (e.target === adminModal) {
+                adminModal.classList.add('hidden');
+                adminModal.classList.remove('flex');
+            }
+        });
+        
+        // Admin login form submission
+        adminForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = adminEmailInput.value.trim();
+            const password = adminPasswordInput.value;
+            
+            console.log('Login attempt:', { email, password });
+            
+            if (!email || !password) {
+                alert('Molimo popunite sva polja.');
+                return;
+            }
+            
+            try {
+                // Check admin credentials in Supabase
+                const { data, error } = await supabase
+                    .from('admin_users')
+                    .select('*')
+                    .eq('email', email)
+                    .single();
+                
+                console.log('Supabase response:', { data, error });
+                
+                if (error || !data) {
+                    console.log('No user found or error:', error);
+                    alert('Pogrešan email ili lozinka.');
+                    return;
+                }
+                
+                console.log('Found user data:', data);
+                console.log('Comparing passwords:', { 
+                    input: password, 
+                    stored: data.password_hash,
+                    match: data.password_hash === password 
+                });
+                
+                // Simple password check (in production, use proper hashing)
+                if (data.password_hash === password) {
+                    console.log('Password match! Logging in...');
+                    // Store admin session
+                    localStorage.setItem('adminAuthenticated', 'true');
+                    localStorage.setItem('adminEmail', email);
+                    
+                    // Redirect to admin panel
+                    window.location.href = 'admin.html';
+                } else {
+                    console.log('Password mismatch');
+                    alert('Pogrešan email ili lozinka.');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Greška pri prijavi. Molimo pokušajte ponovo.');
+            }
+        });
+        
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = emailInput.value.trim();
+            
+            // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Slanje...';
+            submitBtn.disabled = true;
+            
+            try {
+                // Insert email into Supabase
+                const { data, error } = await supabase
+                    .from('newsletter_subscribers')
+                    .insert([
+                        { 
+                            email: email,
+                            status: 'active'
+                        }
+                    ]);
+                
+                if (error) {
+                    if (error.code === '23505') {
+                        // Duplicate email
+                        alert('Ova email adresa je već prijavljena na newsletter.');
+                    } else {
+                        console.error('Error:', error);
+                        alert('Greška pri prijavi. Molimo pokušajte ponovo.');
+                    }
+                } else {
+                    // Success
+                    alert('Hvala! Uspješno ste se prijavili na newsletter.');
+                    
+                    // Close modal
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    
+                    // Reset form
+                    form.reset();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Greška pri prijavi. Molimo pokušajte ponovo.');
+            } finally {
+                // Reset button state
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        });
     </script>
 </body>
 </html>

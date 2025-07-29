@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletter Admin - dr. Milorad Paunović</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JavaScript library -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 space-y-4 sm:space-y-0">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Newsletter Admin</h1>
+                    <span class="text-xs sm:text-sm text-gray-500">dr. Milorad Paunović</span>
+                </div>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                    <span id="subscriber-count" class="text-xs sm:text-sm text-gray-600">Učitavanje...</span>
+                    <div class="flex space-x-3">
+                        <a href="index.html" class="text-blue-600 hover:text-blue-800 text-xs sm:text-sm">← Nazad na sajt</a>
+                        <button id="logout-btn" class="text-red-600 hover:text-red-800 text-xs sm:text-sm">Odjavi se</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+                <h3 class="text-sm sm:text-lg font-medium text-gray-900">Ukupno pretplatnika</h3>
+                <p id="total-subscribers" class="text-2xl sm:text-3xl font-bold text-blue-600">-</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+                <h3 class="text-sm sm:text-lg font-medium text-gray-900">Aktivni pretplatnici</h3>
+                <p id="active-subscribers" class="text-2xl sm:text-3xl font-bold text-green-600">-</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
+                <h3 class="text-sm sm:text-lg font-medium text-gray-900">Poslati newsletteri</h3>
+                <p id="sent-newsletters" class="text-2xl sm:text-3xl font-bold text-purple-600">-</p>
+            </div>
+        </div>
+
+        <!-- Newsletter Form -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Pošalji Newsletter</h2>
+            </div>
+            <form id="newsletter-form" class="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                <div>
+                    <label for="subject" class="block text-sm font-medium text-gray-700 mb-2">
+                        Naslov newslettera *
+                    </label>
+                    <input 
+                        type="text" 
+                        id="subject" 
+                        name="subject" 
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                        placeholder="Unesite naslov newslettera"
+                    >
+                </div>
+
+                <div>
+                    <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
+                        Sadržaj newslettera *
+                    </label>
+                    <textarea 
+                        id="content" 
+                        name="content" 
+                        rows="8" 
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                        placeholder="Napišite sadržaj newslettera ovde..."
+                    ></textarea>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                        <button 
+                            type="button" 
+                            id="preview-btn"
+                            class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            Pregled
+                        </button>
+                        <button 
+                            type="button" 
+                            id="test-btn"
+                            class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            Test email
+                        </button>
+                    </div>
+                    <button 
+                        type="submit" 
+                        id="send-btn"
+                        class="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Pošalji newsletter
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Preview Modal -->
+        <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-2 sm:p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
+                <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-900">Pregled newslettera</h3>
+                    <button id="close-preview" class="text-gray-400 hover:text-gray-600 p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-4 sm:p-6">
+                    <div id="preview-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Email Modal -->
+        <div id="test-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-2 sm:p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+                <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-900">Test email</h3>
+                </div>
+                <form id="test-form" class="p-4 sm:p-6">
+                    <div class="mb-4">
+                        <label for="test-email" class="block text-sm font-medium text-gray-700 mb-2">
+                            Email adresa za test
+                        </label>
+                        <input 
+                            type="email" 
+                            id="test-email" 
+                            required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                            placeholder="test@example.com"
+                        >
+                    </div>
+                    <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button 
+                            type="button" 
+                            id="close-test"
+                            class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                            Otkaži
+                        </button>
+                        <button 
+                            type="submit"
+                            class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
+                        >
+                            Pošalji test
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Check authentication first
+        function checkAuth() {
+            const isAuthenticated = localStorage.getItem('adminAuthenticated');
+            const adminEmail = localStorage.getItem('adminEmail');
+            
+            if (!isAuthenticated || !adminEmail) {
+                alert('Molimo ulogujte se da pristupite admin panelu.');
+                window.location.href = 'index.html';
+                return false;
+            }
+            return true;
+        }
+        
+        // Authenticate with Supabase
+        async function authenticateWithSupabase() {
+            const adminEmail = localStorage.getItem('adminEmail');
+            
+            try {
+                // Sign in with email (passwordless for admin)
+                const { data, error } = await supabase.auth.signInWithOtp({
+                    email: adminEmail,
+                    options: {
+                        shouldCreateUser: false
+                    }
+                });
+                
+                if (error) {
+                    console.log('Supabase auth error:', error);
+                    // For now, we'll continue without Supabase auth
+                    return false;
+                }
+                
+                console.log('Supabase auth successful:', data);
+                return true;
+            } catch (error) {
+                console.log('Supabase auth failed:', error);
+                return false;
+            }
+        }
+        
+        // Check auth on page load
+        if (!checkAuth()) {
+            // Page will redirect, so stop execution
+            throw new Error('Unauthorized access');
+        }
+        
+        // Try to authenticate with Supabase
+        authenticateWithSupabase().then(success => {
+            console.log('Supabase authentication result:', success);
+        });
+        
+        // Initialize Supabase client
+        const supabaseUrl = 'https://prousexeqfrpzejshxpq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByb3VzZXhlcWZycHplanNoeHBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3ODAzOTAsImV4cCI6MjA2OTM1NjM5MH0.7VYr3xdH3jQaWN2xpBuzqwp3hctHAyS1rIMDOBuTEz8';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Supabase Edge Function URL
+        const FUNCTION_URL = 'https://prousexeqfrpzejshxpq.supabase.co/functions/v1/send-newsletter';
+        
+        // Temporary sender email (change this to your verified email)
+        const TEMP_SENDER_EMAIL = 'your-email@gmail.com'; // Replace with your verified email
+
+        // DOM elements
+        const form = document.getElementById('newsletter-form');
+        const subjectInput = document.getElementById('subject');
+        const contentInput = document.getElementById('content');
+        const sendBtn = document.getElementById('send-btn');
+        const previewBtn = document.getElementById('preview-btn');
+        const testBtn = document.getElementById('test-btn');
+        const previewModal = document.getElementById('preview-modal');
+        const testModal = document.getElementById('test-modal');
+        const closePreview = document.getElementById('close-preview');
+        const closeTest = document.getElementById('close-test');
+        const testForm = document.getElementById('test-form');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        // Load subscriber count
+        async function loadSubscriberCount() {
+            console.log('Loading subscriber count...');
+            console.log('Current auth status:', localStorage.getItem('adminAuthenticated'));
+            console.log('Admin email:', localStorage.getItem('adminEmail'));
+            
+            try {
+                console.log('Making Supabase query...');
+                
+                // Try to get user session
+                const { data: { user } } = await supabase.auth.getUser();
+                console.log('Current Supabase user:', user);
+                
+                const { data, error } = await supabase
+                    .from('newsletter_subscribers')
+                    .select('*');
+
+                console.log('Supabase response:', { data, error });
+
+                if (error) {
+                    console.error('Supabase error:', error);
+                    alert('Error loading subscribers: ' + error.message);
+                    return;
+                }
+
+                console.log('Loaded subscribers:', data);
+                console.log('Data type:', typeof data);
+                console.log('Data length:', data ? data.length : 'null');
+
+                if (!data || !Array.isArray(data)) {
+                    console.error('Invalid data format:', data);
+                    alert('Invalid data format received from Supabase');
+                    return;
+                }
+
+                const totalCount = data.length;
+                const activeCount = data.length;
+
+                console.log('Setting counts:', { totalCount, activeCount });
+
+                document.getElementById('total-subscribers').textContent = totalCount;
+                document.getElementById('active-subscribers').textContent = activeCount;
+                document.getElementById('subscriber-count').textContent = `${totalCount} pretplatnika`;
+
+                console.log('Subscriber count updated successfully');
+            } catch (error) {
+                console.error('Error in loadSubscriberCount:', error);
+                alert('Error loading subscribers: ' + error.message);
+            }
+        }
+
+        // Send newsletter via Supabase Edge Function
+        async function sendNewsletter(subject, content, recipients) {
+            const emails = recipients.map(sub => sub.email);
+            
+            const emailData = {
+                subject: subject,
+                content: content,
+                recipients: emails,
+                isTest: false
+            };
+
+            console.log('Sending newsletter to:', emails.length, 'recipients');
+            console.log('Email data:', emailData);
+
+            try {
+                const response = await fetch(FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${supabaseKey}`
+                    },
+                    body: JSON.stringify(emailData)
+                });
+
+                console.log('Function response status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Function success:', result);
+                    return { success: true, message: result.message };
+                } else {
+                    const errorText = await response.text();
+                    console.error('Function error:', errorText);
+                    return { success: false, error: errorText };
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Send test email via Supabase Edge Function
+        async function sendTestEmail(email, subject, content) {
+            const emailData = {
+                subject: subject,
+                content: content,
+                recipients: [email],
+                isTest: true
+            };
+
+            console.log('Sending test email to:', email);
+            console.log('Test email data:', emailData);
+
+            try {
+                const response = await fetch(FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${supabaseKey}`
+                    },
+                    body: JSON.stringify(emailData)
+                });
+
+                console.log('Test email response status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Test email sent successfully:', result);
+                    return true;
+                } else {
+                    const errorText = await response.text();
+                    console.error('Test email error:', errorText);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Test email network error:', error);
+                return false;
+            }
+        }
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const subject = subjectInput.value.trim();
+            const content = contentInput.value.trim();
+            
+            if (!subject || !content) {
+                alert('Molimo popunite sva polja.');
+                return;
+            }
+
+            // Confirm before sending
+            if (!confirm(`Da li ste sigurni da želite da pošaljete newsletter "${subject}" svim ${document.getElementById('total-subscribers').textContent} pretplatnicima?`)) {
+                return;
+            }
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Slanje...';
+
+            try {
+                // Get all active subscribers
+                const { data: subscribers, error } = await supabase
+                    .from('newsletter_subscribers')
+                    .select('*');
+
+                if (error) {
+                    throw new Error('Greška pri učitavanju pretplatnika');
+                }
+
+                if (subscribers.length === 0) {
+                    alert('Nema pretplatnika.');
+                    return;
+                }
+
+                // Send newsletter
+                const result = await sendNewsletter(subject, content, subscribers);
+
+                if (result.success) {
+                    alert(`Newsletter uspešno poslat ${subscribers.length} pretplatnicima!`);
+                    form.reset();
+                } else {
+                    alert(`Greška pri slanju: ${result.error}`);
+                }
+            } catch (error) {
+                alert(`Greška: ${error.message}`);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Pošalji newsletter';
+            }
+        });
+
+        // Preview functionality
+        previewBtn.addEventListener('click', () => {
+            const subject = subjectInput.value.trim();
+            const content = contentInput.value.trim();
+            
+            if (!subject || !content) {
+                alert('Molimo popunite naslov i sadržaj za pregled.');
+                return;
+            }
+
+            const previewContent = document.getElementById('preview-content');
+            previewContent.innerHTML = `
+                <h2 class="text-xl font-bold mb-4">${subject}</h2>
+                <div class="prose max-w-none">
+                    ${content.replace(/\n/g, '<br>')}
+                </div>
+            `;
+            
+            previewModal.classList.remove('hidden');
+            previewModal.classList.add('flex');
+        });
+
+        // Test email functionality
+        testBtn.addEventListener('click', () => {
+            const subject = subjectInput.value.trim();
+            const content = contentInput.value.trim();
+            
+            if (!subject || !content) {
+                alert('Molimo popunite naslov i sadržaj za test.');
+                return;
+            }
+
+            testModal.classList.remove('hidden');
+            testModal.classList.add('flex');
+        });
+
+        // Close modals
+        closePreview.addEventListener('click', () => {
+            previewModal.classList.add('hidden');
+            previewModal.classList.remove('flex');
+        });
+
+        closeTest.addEventListener('click', () => {
+            testModal.classList.add('hidden');
+            testModal.classList.remove('flex');
+        });
+
+        // Test form submission
+        testForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const testEmail = document.getElementById('test-email').value.trim();
+            const subject = subjectInput.value.trim();
+            const content = contentInput.value.trim();
+
+            const submitBtn = testForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Slanje...';
+
+            try {
+                const success = await sendTestEmail(testEmail, subject, content);
+                
+                if (success) {
+                    alert('Test email uspešno poslat!');
+                    testModal.classList.add('hidden');
+                    testModal.classList.remove('flex');
+                    testForm.reset();
+                } else {
+                    alert('Greška pri slanju test emaila.');
+                }
+            } catch (error) {
+                alert(`Greška: ${error.message}`);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Pošalji test';
+            }
+        });
+
+        // Close modals when clicking outside
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) {
+                previewModal.classList.add('hidden');
+                previewModal.classList.remove('flex');
+            }
+        });
+
+        testModal.addEventListener('click', (e) => {
+            if (e.target === testModal) {
+                testModal.classList.add('hidden');
+                testModal.classList.remove('flex');
+            }
+        });
+
+        // Logout functionality
+        logoutBtn.addEventListener('click', () => {
+            if (confirm('Da li ste sigurni da želite da se odjavite?')) {
+                localStorage.removeItem('adminAuthenticated');
+                localStorage.removeItem('adminEmail');
+                alert('Uspješno ste se odjavili.');
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Load initial data
+        loadSubscriberCount();
+    </script>
+</body>
+</html> 
