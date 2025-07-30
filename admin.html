@@ -179,7 +179,7 @@
             
             if (!isAuthenticated || !adminEmail) {
                 alert('Molimo ulogujte se da pristupite admin panelu.');
-                window.location.href = 'index.html';
+                window.location.href = 'admin/';
                 return false;
             }
             return true;
@@ -543,7 +543,7 @@
                 localStorage.removeItem('adminAuthenticated');
                 localStorage.removeItem('adminEmail');
                 alert('Uspješno ste se odjavili.');
-                window.location.href = 'index.html';
+                window.location.href = 'admin/';
             }
         });
 
