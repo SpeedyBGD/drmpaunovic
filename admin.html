@@ -177,12 +177,29 @@
             const isAuthenticated = localStorage.getItem('adminAuthenticated');
             const adminEmail = localStorage.getItem('adminEmail');
             
+            console.log('checkAuth called:', { isAuthenticated, adminEmail });
+            
             if (!isAuthenticated || !adminEmail) {
-                alert('Molimo ulogujte se da pristupite admin panelu.');
-                window.location.href = 'admin/';
+                console.log('Not authenticated, showing login modal');
+                // Show login modal instead of redirecting
+                showLoginModal();
                 return false;
             }
+            console.log('Authenticated, proceeding with admin functionality');
             return true;
+        }
+        
+        // Show login modal
+        function showLoginModal() {
+            const loginModal = document.getElementById('login-modal');
+            console.log('showLoginModal called, loginModal element:', loginModal);
+            if (loginModal) {
+                loginModal.classList.remove('hidden');
+                loginModal.classList.add('flex');
+                console.log('Login modal should now be visible');
+            } else {
+                console.error('Login modal element not found!');
+            }
         }
         
         // Authenticate with Supabase
@@ -212,21 +229,31 @@
             }
         }
         
-        // Check auth on page load
-        if (!checkAuth()) {
-            // Page will redirect, so stop execution
-            throw new Error('Unauthorized access');
-        }
-        
-        // Try to authenticate with Supabase
-        authenticateWithSupabase().then(success => {
-            console.log('Supabase authentication result:', success);
-        });
-        
-        // Initialize Supabase client
+        // Initialize Supabase client first
         const supabaseUrl = 'https://prousexeqfrpzejshxpq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByb3VzZXhlcWZycHplanNoeHBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3ODAzOTAsImV4cCI6MjA2OTM1NjM5MH0.7VYr3xdH3jQaWN2xpBuzqwp3hctHAyS1rIMDOBuTEz8';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Check auth on page load after DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, checking authentication...');
+            
+            // Set up login modal functionality
+            setupLoginModal();
+            
+            const isAuthenticated = checkAuth();
+            
+            // Only proceed with admin functionality if authenticated
+            if (isAuthenticated) {
+                // Try to authenticate with Supabase
+                authenticateWithSupabase().then(success => {
+                    console.log('Supabase authentication result:', success);
+                });
+                
+                // Load initial data only if authenticated
+                loadSubscriberCount();
+            }
+        });
 
         // Supabase Edge Function URL
         const FUNCTION_URL = 'https://prousexeqfrpzejshxpq.supabase.co/functions/v1/send-newsletter';
@@ -543,12 +570,173 @@
                 localStorage.removeItem('adminAuthenticated');
                 localStorage.removeItem('adminEmail');
                 alert('Uspješno ste se odjavili.');
-                window.location.href = 'admin/';
+                window.location.href = 'index.html';
             }
         });
 
-        // Load initial data
-        loadSubscriberCount();
+        // Initial data loading is now handled in the authentication check above
+        
+        // Login modal functionality - will be set up after DOM loads
+        function setupLoginModal() {
+            const loginModal = document.getElementById('login-modal');
+            const closeLoginBtn = document.getElementById('close-login-modal');
+            const adminLoginForm = document.getElementById('admin-login-form');
+            const adminEmailInput = document.getElementById('admin-email');
+            const adminPasswordInput = document.getElementById('admin-password');
+            
+            console.log('Setting up login modal elements:', {
+                loginModal: !!loginModal,
+                closeLoginBtn: !!closeLoginBtn,
+                adminLoginForm: !!adminLoginForm,
+                adminEmailInput: !!adminEmailInput,
+                adminPasswordInput: !!adminPasswordInput
+            });
+            
+            // Close login modal
+            if (closeLoginBtn) {
+                closeLoginBtn.addEventListener('click', () => {
+                    loginModal.classList.add('hidden');
+                    loginModal.classList.remove('flex');
+                });
+            }
+            
+            // Close login modal when clicking outside
+            if (loginModal) {
+                loginModal.addEventListener('click', (e) => {
+                    if (e.target === loginModal) {
+                        loginModal.classList.add('hidden');
+                        loginModal.classList.remove('flex');
+                    }
+                });
+            }
+            
+            // Admin login form submission
+            if (adminLoginForm) {
+                console.log('Adding submit event listener to admin login form');
+                adminLoginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    console.log('Login form submitted!');
+                    
+                    const email = adminEmailInput.value.trim();
+                    const password = adminPasswordInput.value;
+                    
+                    console.log('Login attempt:', { email, password });
+                    
+                    if (!email || !password) {
+                        alert('Molimo popunite sva polja.');
+                        return;
+                    }
+                    
+                    try {
+                        console.log('Attempting to query admin_users table...');
+                        // Check admin credentials in Supabase
+                        const { data, error } = await supabase
+                            .from('admin_users')
+                            .select('*')
+                            .eq('email', email)
+                            .single();
+                        
+                        console.log('Supabase response:', { data, error });
+                        
+                        if (error) {
+                            console.log('Supabase error:', error);
+                            alert('Greška pri povezivanju sa bazom: ' + error.message);
+                            return;
+                        }
+                        
+                        if (!data) {
+                            console.log('No user found with email:', email);
+                            alert('Pogrešan email ili lozinka.');
+                            return;
+                        }
+                        
+                        console.log('Found user data:', data);
+                        console.log('Comparing passwords:', { 
+                            input: password, 
+                            stored: data.password_hash,
+                            match: data.password_hash === password 
+                        });
+                        
+                        // Simple password check (in production, use proper hashing)
+                        if (data.password_hash === password) {
+                            console.log('Password match! Logging in...');
+                            // Store admin session
+                            localStorage.setItem('adminAuthenticated', 'true');
+                            localStorage.setItem('adminEmail', email);
+                            
+                            // Close modal and reload page
+                            loginModal.classList.add('hidden');
+                            loginModal.classList.remove('flex');
+                            window.location.reload();
+                        } else {
+                            console.log('Password mismatch');
+                            alert('Pogrešan email ili lozinka.');
+                        }
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        alert('Greška pri prijavi. Molimo pokušajte ponovo.');
+                    }
+                });
+            } else {
+                console.error('Admin login form not found!');
+            }
+        }
     </script>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white text-gray-900 rounded-lg shadow-xl max-w-md w-full p-6 relative">
+            <!-- Close button -->
+            <button id="close-login-modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            
+            <!-- Modal content -->
+            <div class="text-center">
+                <h3 class="text-xl font-bold mb-4">Admin Login</h3>
+                <p class="text-gray-600 mb-6">Unesite svoje admin podatke</p>
+                
+                <form id="admin-login-form" class="space-y-4">
+                    <div>
+                        <label for="admin-email" class="block text-sm font-medium text-gray-700 mb-2">
+                            Email
+                        </label>
+                        <input 
+                            type="email" 
+                            id="admin-email" 
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="admin@drmpaunovic.rs"
+                        >
+                    </div>
+                    <div>
+                        <label for="admin-password" class="block text-sm font-medium text-gray-700 mb-2">
+                            Lozinka
+                        </label>
+                        <input 
+                            type="password" 
+                            id="admin-password" 
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Unesite lozinku"
+                        >
+                    </div>
+                    <button 
+                        type="submit" 
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        Uloguj se
+                    </button>
+                </form>
+                
+                <p class="text-xs text-gray-500 mt-4">
+                    Samo autorizovani korisnici mogu pristupiti admin panelu.
+                </p>
+            </div>
+        </div>
+    </div>
 </body>
 </html> 
