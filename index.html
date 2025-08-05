@@ -295,20 +295,7 @@
         const adminEmailInput = document.getElementById('admin-email');
         const adminPasswordInput = document.getElementById('admin-password');
         
-        // Check if elements exist
-        console.log('Elements found:', {
-            modal: !!modal,
-            openBtn: !!openBtn,
-            closeBtn: !!closeBtn,
-            form: !!form,
-            emailInput: !!emailInput,
-            adminModal: !!adminModal,
-            adminBtn: !!adminBtn,
-            closeAdminBtn: !!closeAdminBtn,
-            adminForm: !!adminForm,
-            adminEmailInput: !!adminEmailInput,
-            adminPasswordInput: !!adminPasswordInput
-        });
+        // Check if elements exist (debug info removed)
         
         // Open newsletter modal
         if (openBtn) {
@@ -482,16 +469,10 @@
         const contactEmailInput = document.getElementById('contact-email');
         const contactMessageInput = document.getElementById('contact-message');
         
-        console.log('Contact elements found:', {
-            contactModal: !!contactModal,
-            contactBtn: !!contactBtn,
-            closeContactBtn: !!closeContactBtn,
-            contactForm: !!contactForm
-        });
+        // Contact elements found (debug info removed)
         
         // Open contact modal
         contactBtn.addEventListener('click', () => {
-            console.log('Contact button clicked!');
             contactModal.classList.remove('hidden');
             contactModal.classList.add('flex');
         });
