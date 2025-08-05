@@ -10,6 +10,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JavaScript library -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Bcrypt library for password hashing -->
+    <script src="./bcrypt.min.js"></script>
     <style>
         /* Custom styles if needed, or to override Tailwind */
         body {
@@ -389,24 +391,23 @@
                     .eq('email', email)
                     .single();
                 
-                console.log('Supabase response:', { data, error });
-                
                 if (error || !data) {
-                    console.log('No user found or error:', error);
                     alert('Pogrešan email ili lozinka.');
                     return;
                 }
                 
-                console.log('Found user data:', data);
-                console.log('Comparing passwords:', { 
-                    input: password, 
-                    stored: data.password_hash,
-                    match: data.password_hash === password 
-                });
+                // Use bcrypt to verify password
+                let bcryptLib;
+                if (typeof bcrypt !== 'undefined') {
+                    bcryptLib = bcrypt;
+                } else if (window.dcodeIO && window.dcodeIO.bcrypt) {
+                    bcryptLib = window.dcodeIO.bcrypt;
+                } else {
+                    throw new Error('Bcrypt library not available');
+                }
+                const isPasswordValid = await bcryptLib.compare(password, data.password_hash);
                 
-                // Simple password check (in production, use proper hashing)
-                if (data.password_hash === password) {
-                    console.log('Password match! Logging in...');
+                if (isPasswordValid) {
                     // Store admin session
                     localStorage.setItem('adminAuthenticated', 'true');
                     localStorage.setItem('adminEmail', email);
@@ -414,7 +415,6 @@
                     // Redirect to admin panel
                     window.location.href = 'admin.html';
                 } else {
-                    console.log('Password mismatch');
                     alert('Pogrešan email ili lozinka.');
                 }
             } catch (error) {

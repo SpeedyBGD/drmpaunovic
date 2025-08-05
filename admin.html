@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JavaScript library -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Bcrypt library for password hashing -->
+    <script src="./bcrypt.min.js"></script>
     <style>
         body {
             font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
@@ -177,26 +179,20 @@
             const isAuthenticated = localStorage.getItem('adminAuthenticated');
             const adminEmail = localStorage.getItem('adminEmail');
             
-            console.log('checkAuth called:', { isAuthenticated, adminEmail });
-            
             if (!isAuthenticated || !adminEmail) {
-                console.log('Not authenticated, showing login modal');
                 // Show login modal instead of redirecting
                 showLoginModal();
                 return false;
             }
-            console.log('Authenticated, proceeding with admin functionality');
             return true;
         }
         
         // Show login modal
         function showLoginModal() {
             const loginModal = document.getElementById('login-modal');
-            console.log('showLoginModal called, loginModal element:', loginModal);
             if (loginModal) {
                 loginModal.classList.remove('hidden');
                 loginModal.classList.add('flex');
-                console.log('Login modal should now be visible');
             } else {
                 console.error('Login modal element not found!');
             }
@@ -216,15 +212,12 @@
                 });
                 
                 if (error) {
-                    console.log('Supabase auth error:', error);
                     // For now, we'll continue without Supabase auth
                     return false;
                 }
                 
-                console.log('Supabase auth successful:', data);
                 return true;
             } catch (error) {
-                console.log('Supabase auth failed:', error);
                 return false;
             }
         }
@@ -236,8 +229,6 @@
 
         // Check auth on page load after DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, checking authentication...');
-            
             // Set up login modal functionality
             setupLoginModal();
             
@@ -247,7 +238,7 @@
             if (isAuthenticated) {
                 // Try to authenticate with Supabase
                 authenticateWithSupabase().then(success => {
-                    console.log('Supabase authentication result:', success);
+                    // Authentication handled silently
                 });
                 
                 // Load initial data only if authenticated
@@ -277,32 +268,19 @@
 
         // Load subscriber count
         async function loadSubscriberCount() {
-            console.log('Loading subscriber count...');
-            console.log('Current auth status:', localStorage.getItem('adminAuthenticated'));
-            console.log('Admin email:', localStorage.getItem('adminEmail'));
-            
             try {
-                console.log('Making Supabase query...');
-                
                 // Try to get user session
                 const { data: { user } } = await supabase.auth.getUser();
-                console.log('Current Supabase user:', user);
                 
                 const { data, error } = await supabase
                     .from('newsletter_subscribers')
                     .select('*');
-
-                console.log('Supabase response:', { data, error });
 
                 if (error) {
                     console.error('Supabase error:', error);
                     alert('Error loading subscribers: ' + error.message);
                     return;
                 }
-
-                console.log('Loaded subscribers:', data);
-                console.log('Data type:', typeof data);
-                console.log('Data length:', data ? data.length : 'null');
 
                 if (!data || !Array.isArray(data)) {
                     console.error('Invalid data format:', data);
@@ -313,13 +291,9 @@
                 const totalCount = data.length;
                 const activeCount = data.length;
 
-                console.log('Setting counts:', { totalCount, activeCount });
-
                 document.getElementById('total-subscribers').textContent = totalCount;
                 document.getElementById('active-subscribers').textContent = activeCount;
                 document.getElementById('subscriber-count').textContent = `${totalCount} pretplatnika`;
-
-                console.log('Subscriber count updated successfully');
             } catch (error) {
                 console.error('Error in loadSubscriberCount:', error);
                 alert('Error loading subscribers: ' + error.message);
@@ -328,8 +302,6 @@
 
         // Send newsletter via Supabase Edge Function
         async function sendNewsletter(subject, content, recipients) {
-            console.log('Sending newsletter to:', recipients.length, 'recipients');
-            
             let successCount = 0;
             let errorCount = 0;
             
@@ -341,8 +313,6 @@
                     recipients: [recipient.email], // Single recipient
                     isTest: false
                 };
-
-                console.log('Sending to:', recipient.email);
 
                 try {
                     const response = await fetch(FUNCTION_URL, {
@@ -356,7 +326,6 @@
 
                     if (response.ok) {
                         successCount++;
-                        console.log('Email sent successfully to:', recipient.email);
                     } else {
                         errorCount++;
                         console.error('Failed to send to:', recipient.email);
@@ -389,9 +358,6 @@
                 isTest: true
             };
 
-            console.log('Sending test email to:', email);
-            console.log('Test email data:', emailData);
-
             try {
                 const response = await fetch(FUNCTION_URL, {
                     method: 'POST',
@@ -401,12 +367,9 @@
                     },
                     body: JSON.stringify(emailData)
                 });
-
-                console.log('Test email response status:', response.status);
                 
                 if (response.ok) {
                     const result = await response.json();
-                    console.log('Test email sent successfully:', result);
                     return true;
                 } else {
                     const errorText = await response.text();
@@ -584,14 +547,6 @@
             const adminEmailInput = document.getElementById('admin-email');
             const adminPasswordInput = document.getElementById('admin-password');
             
-            console.log('Setting up login modal elements:', {
-                loginModal: !!loginModal,
-                closeLoginBtn: !!closeLoginBtn,
-                adminLoginForm: !!adminLoginForm,
-                adminEmailInput: !!adminEmailInput,
-                adminPasswordInput: !!adminPasswordInput
-            });
-            
             // Close login modal
             if (closeLoginBtn) {
                 closeLoginBtn.addEventListener('click', () => {
@@ -612,15 +567,11 @@
             
             // Admin login form submission
             if (adminLoginForm) {
-                console.log('Adding submit event listener to admin login form');
                 adminLoginForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    console.log('Login form submitted!');
                     
                     const email = adminEmailInput.value.trim();
                     const password = adminPasswordInput.value;
-                    
-                    console.log('Login attempt:', { email, password });
                     
                     if (!email || !password) {
                         alert('Molimo popunite sva polja.');
@@ -628,7 +579,6 @@
                     }
                     
                     try {
-                        console.log('Attempting to query admin_users table...');
                         // Check admin credentials in Supabase
                         const { data, error } = await supabase
                             .from('admin_users')
@@ -636,30 +586,28 @@
                             .eq('email', email)
                             .single();
                         
-                        console.log('Supabase response:', { data, error });
-                        
                         if (error) {
-                            console.log('Supabase error:', error);
                             alert('Greška pri povezivanju sa bazom: ' + error.message);
                             return;
                         }
                         
                         if (!data) {
-                            console.log('No user found with email:', email);
                             alert('Pogrešan email ili lozinka.');
                             return;
                         }
                         
-                        console.log('Found user data:', data);
-                        console.log('Comparing passwords:', { 
-                            input: password, 
-                            stored: data.password_hash,
-                            match: data.password_hash === password 
-                        });
+                        // Use bcrypt to verify password
+                        let bcryptLib;
+                        if (typeof bcrypt !== 'undefined') {
+                            bcryptLib = bcrypt;
+                        } else if (window.dcodeIO && window.dcodeIO.bcrypt) {
+                            bcryptLib = window.dcodeIO.bcrypt;
+                        } else {
+                            throw new Error('Bcrypt library not available');
+                        }
+                        const isPasswordValid = await bcryptLib.compare(password, data.password_hash);
                         
-                        // Simple password check (in production, use proper hashing)
-                        if (data.password_hash === password) {
-                            console.log('Password match! Logging in...');
+                        if (isPasswordValid) {
                             // Store admin session
                             localStorage.setItem('adminAuthenticated', 'true');
                             localStorage.setItem('adminEmail', email);
@@ -669,7 +617,6 @@
                             loginModal.classList.remove('flex');
                             window.location.reload();
                         } else {
-                            console.log('Password mismatch');
                             alert('Pogrešan email ili lozinka.');
                         }
                     } catch (error) {

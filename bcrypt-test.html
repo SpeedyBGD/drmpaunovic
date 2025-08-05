@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bcrypt Test</title>
+    <script src="./bcrypt.min.js"></script>
+</head>
+<body>
+    <h1>Bcrypt Test</h1>
+    <div id="status">Loading...</div>
+    
+    <script>
+        function testBcrypt() {
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                // Test if bcrypt is available
+                if (typeof bcrypt === 'undefined') {
+                    statusDiv.innerHTML = '<p style="color: red;">❌ Bcrypt not available directly</p>';
+                    return;
+                }
+                
+                // Test basic functionality
+                const testPassword = 'test123';
+                const saltRounds = 10;
+                
+                bcrypt.hash(testPassword, saltRounds).then(hash => {
+                    console.log('Hash generated:', hash);
+                    
+                    // Test comparison
+                    return bcrypt.compare(testPassword, hash);
+                }).then(isMatch => {
+                    if (isMatch) {
+                        statusDiv.innerHTML = '<p style="color: green;">✅ Bcrypt is working correctly!</p>';
+                        console.log('Bcrypt test successful');
+                    } else {
+                        statusDiv.innerHTML = '<p style="color: red;">❌ Hash comparison failed</p>';
+                    }
+                }).catch(error => {
+                    statusDiv.innerHTML = '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+                    console.error('Bcrypt test error:', error);
+                });
+                
+            } catch (error) {
+                statusDiv.innerHTML = '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+                console.error('Bcrypt test error:', error);
+            }
+        }
+        
+        // Test when page loads
+        window.addEventListener('load', testBcrypt);
+        
+        // Also test after a delay
+        setTimeout(testBcrypt, 1000);
+    </script>
+</body>
+</html> 
