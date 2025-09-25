@@ -1,12 +1,8 @@
 User-agent: *
 Allow: /
 
-# Disallow admin and API endpoints
 Disallow: /admin.html
 Disallow: /admin/
 Disallow: /api/
 
-# Update the domain below to your production domain
 Sitemap: https://drmpaunovic.rs/sitemap.xml
-
-
