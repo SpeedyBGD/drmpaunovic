@@ -401,7 +401,7 @@
             const email = adminEmailInput.value.trim();
             const password = adminPasswordInput.value;
             
-            console.log('Login attempt:', { email, password });
+            // removed debug logging of credentials
             
             if (!email || !password) {
                 alert('Molimo popunite sva polja.');
